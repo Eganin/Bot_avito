@@ -2,7 +2,8 @@ import telebot
 from telebot import types
 import requests
 import bs4
-from config import *
+import csv
+#from config_new import *
 import os
 import os.path
 
@@ -178,6 +179,20 @@ class Avito_parser_main(object):
         print(data_all)
         return data_all
 
+    def csv_writer(self, data):
+        '''
+        Запись словаря data из parsing_block в csv
+        :param data:
+        :return:
+        '''
+        with open('text.csv', 'a') as f:
+            writer = csv.writer(f)
+            for i in data:
+                writer.writerow((i['title'],
+                                 i['href'],
+                                 i['price'],
+                                 i['address']))
+
     def Towner_and_Item(self, Town):
         '''
         Перевод русской речи на английскую , для того чтобы можно было задать параметры для ссылки
@@ -243,7 +258,6 @@ def main_main(town, category, item=None, price_now=None, price_old=None):
     :param price_old:
     :return:
     '''
-    data = []
     if item == 1:
         item = None
 
@@ -264,9 +278,7 @@ def main_main(town, category, item=None, price_now=None, price_old=None):
             text = cls.parametring(page=i)
 
         res = cls.parsing_block(text)
-        data.append(res)
-
-    return data
+        cls.csv_writer(res)
 
 
 def main_href(href):
@@ -384,17 +396,27 @@ def main_avito(message):
                 bot.send_message(message.chat.id,
                                  'Нужные данные введены , парсинг может занять боллее 5 минут , пожалуйста имейте терпение')
 
-                try:
-                    main_result = main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1],
-                                            price_now=PRICE_NOW[-1],
-                                            price_old=PRICE_OLD[-1])
-                    for i in main_result:
-                        bot.send_message(message.chat.id, i)
+                file_path = 'text.csv'
 
-                except:
-                    bot.send_message(message.chat.id, 'Вы ввели некорректные данные , пожалуйста повторите')
+                if os.path.exists(file_path):
+                    '''
+                    Очистка файла 
+                    '''
+                    os.remove(file_path)
+                    with open(file_path, 'w+') as file:
+                        pass
 
-                bot.send_message(message.chat.id, 'Парсинг объявлений закончен')
+                with open(file_path, 'rb') as file:
+                    # Запись в файл работы парсера
+                    try:
+                        main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1], price_now=PRICE_NOW[-1],
+                                  price_old=PRICE_OLD[-1])
+
+                    except:
+                        bot.send_message(message.chat.id, 'Вы ввели некорректные данные , пожалуйста повторите')
+
+                    bot.send_document(message.chat.id, file)
+                    bot.send_message(message.chat.id, 'Парсинг объявлений закончен')
 
                 # Очитска списков , чтобы не было перенакопления
                 PRICE_NOW[:] = []
@@ -441,11 +463,11 @@ def main_callback(call):
                     pass
 
             with open(file_path, 'rb') as file:
-                try:
+                try :
                     main_href(HREF[-1])
 
                 except:
-                    bot.send_message(call.message.chat.id, 'Вы ввели некоректные данные повторите еще раз пожалуйста')
+                    bot.send_message(call.message.chat.id , 'Вы ввели некоректные данные повторите еще раз пожалуйста')
 
                 bot.send_document(call.message.chat.id, file)
                 bot.send_message(call.message.chat.id, 'Парсинг объявлений закончен')
