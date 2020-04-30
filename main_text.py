@@ -23,7 +23,7 @@ CATEGORY = []
 bot = telebot.TeleBot(TG_TOKEN)
 
 
-def main_main(town, category, item=None, price_now=None, price_old=None, messing=None):
+def main_main(town, category, item=None, price_now=None, price_old=None):
     '''
     Запуск парсера с параметрами , значения которые не ввел пользователь будут 1
     :param town:
@@ -42,7 +42,7 @@ def main_main(town, category, item=None, price_now=None, price_old=None, messing
     if price_old == 1:
         price_old = None
 
-    cls = Avito_parser_main(category, town, price_now, price_old, item , messing)
+    cls = Avito_parser_main(category, town, price_now, price_old, item)
     r = cls.url_r
     rang = cls.get_pagination(r)
     for i in range(1, int(rang) + 1):
@@ -170,12 +170,34 @@ def main_avito(message):
 
                 bot.send_message(message.chat.id,
                                  'Нужные данные введены , парсинг может занять боллее 5 минут , пожалуйста имейте терпение')
-                markup_variance = types.InlineKeyboardMarkup()
-                mark_1 = types.InlineKeyboardButton('Отправить сообщением', callback_data='mess')
-                mark_2 = types.InlineKeyboardButton('Отправить файлом xlsx', callback_data='xlsx')
-                markup_variance.add(mark_1, mark_2)
-                bot.send_message(message.chat.id, 'Выберете удобный вам способ отправки',
-                                 reply_markup=markup_variance)
+
+                file_path = 'text.xlsx'
+
+                if os.path.exists(file_path):
+                    '''
+                    Очистка файла 
+                    '''
+                    os.remove(file_path)
+                    with open(file_path, 'w+') as file:
+                        pass
+
+                with open(file_path, 'rb') as file:
+                    # Запись в файл работы парсера
+                    try:
+                        main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1], price_now=PRICE_NOW[-1],
+                                  price_old=PRICE_OLD[-1])
+
+                    except:
+                        bot.send_message(message.chat.id, 'Вы ввели некорректные данные , пожалуйста повторите')
+
+                    bot.send_document(message.chat.id, file)
+                    bot.send_message(message.chat.id, 'Парсинг объявлений закончен')
+                    markup_variance = types.InlineKeyboardMarkup()
+                    mark_1 = types.InlineKeyboardButton('Отправить сообщением', callback_data='mess')
+                    mark_2 = types.InlineKeyboardButton('Опровить файлом xlsx', callback_data='xlsx')
+                    markup_variance.add(mark_1, mark_2)
+                    bot.send_message(message.chat.id, 'Выберете удобный вам способ отправки',
+                                     reply_markup=markup_variance)
 
                 # Очитска списков , чтобы не было перенакопления
                 PRICE_NOW[:] = []
@@ -215,31 +237,10 @@ def main_callback(call):
             bot.send_message(call.message.chat.id, 'Введите url для парсинга объявлений')
 
         elif call.data == 'mess':
-            try:
-                main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1], price_now=PRICE_NOW[-1],
-                          price_old=PRICE_OLD[-1])
-
-            except Exception as e:
-                bot.send_message(call.message.chat.id, f'Произошла ошибка повторите еще раз пожалуйста {e}')
-
+            pass
+        
         elif call.data == 'xlsx':
-            file_path = 'text.xlsx'
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                with open(file_path, 'w+') as file:
-                    pass
-
-                with open(file_path, 'rb') as file:
-                    try:
-                        main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1], price_now=PRICE_NOW[-1],
-                                  price_old=PRICE_OLD[-1])
-
-                        bot.send_document(call.message.chat.id, file)
-                        bot.send_message(call.message.chat.id, 'Парсинг объявлений закончен')
-
-                    except Exception as e:
-                        bot.send_message(call.message.chat.id, f'Произошла ошибка повторите еще раз пожалуйста {e}')
-
+            pass
 
         elif call.data == 'parsing':
             file_path = 'text.csv'
