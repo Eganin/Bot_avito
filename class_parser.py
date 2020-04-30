@@ -9,7 +9,7 @@ class Avito_parser_main(object):
     класс отвечающий за парсинг авито с параметрами
     '''
 
-    def __init__(self, categories, town, price_now=None, price_old=None, item=None , messing=None):
+    def __init__(self, categories, town, price_now=None, price_old=None, item=None):
         self.BASE_URL = BASE_URL
         self.url = requests.get(self.get_url(categories, town)).url
         self.item = item

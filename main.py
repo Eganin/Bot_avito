@@ -42,7 +42,8 @@ def main_main(town, category, item=None, price_now=None, price_old=None, messing
     if price_old == 1:
         price_old = None
 
-    cls = Avito_parser_main(category, town, price_now, price_old, item , messing)
+    message = []
+    cls = Avito_parser_main(category, town, price_now, price_old, item)
     r = cls.url_r
     rang = cls.get_pagination(r)
     for i in range(1, int(rang) + 1):
@@ -53,7 +54,14 @@ def main_main(town, category, item=None, price_now=None, price_old=None, messing
             text = cls.parametring(page=i)
 
         res = cls.parsing_block(text)
-        cls.csv_writer(res)
+        if messing == 1:
+            message.append(res)
+
+        else:
+            cls.csv_writer(res)
+
+    if message:
+        return message
 
 
 def main_href(href):
@@ -81,8 +89,9 @@ def starting(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     board_1 = types.KeyboardButton('Начать работу')
     board_2 = types.KeyboardButton('Как пользоваться')
+    board_3 = types.KeyboardButton('Сбросить все')
 
-    markup.add(board_1, board_2)
+    markup.add(board_1, board_2, board_3)
     bot.send_message(message.chat.id, GREET, parse_mode='html', reply_markup=markup)
 
 
@@ -126,6 +135,20 @@ def main_avito(message):
 
         elif message.text.lower().strip() == 'как пользоваться':
             bot.send_message(message.chat.id, HELP, parse_mode='html')
+
+        elif message.text.lower().strip() == 'сбросить все':
+            ITEM[:] = []
+
+            PRICE_OLD[:] = []
+
+            PRICE_NOW[:] = []
+
+            CATEGORY[:] = []
+
+            HREF[:] = []
+
+            TOWN[:] = []
+            bot.send_message(message.chat.id, 'Настройки сброшены')
 
         else:
             # Получение параметров для парсинга , с заданием воиросов для ползователя
@@ -173,22 +196,10 @@ def main_avito(message):
                 markup_variance = types.InlineKeyboardMarkup()
                 mark_1 = types.InlineKeyboardButton('Отправить сообщением', callback_data='mess')
                 mark_2 = types.InlineKeyboardButton('Отправить файлом xlsx', callback_data='xlsx')
+                mark_2 = types.InlineKeyboardButton('Отправить файлом csv', callback_data='csv')
                 markup_variance.add(mark_1, mark_2)
                 bot.send_message(message.chat.id, 'Выберете удобный вам способ отправки',
                                  reply_markup=markup_variance)
-
-                # Очитска списков , чтобы не было перенакопления
-                PRICE_NOW[:] = []
-
-                PRICE_OLD[:] = []
-
-                HREF[:] = []
-
-                TOWN[:] = []
-
-                ITEM[:] = []
-
-                CATEGORY[:] = []
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -215,30 +226,61 @@ def main_callback(call):
             bot.send_message(call.message.chat.id, 'Введите url для парсинга объявлений')
 
         elif call.data == 'mess':
+            def data_reparing(dictionary):
+                mess_res = f"Название : {dictionary['title']}\n" \
+                           f"Ссылка : {dictionary['href']}\n" \
+                           f"Цена : {dictionary['price']}\n" \
+                           f"Аддресс : {dictionary['address']}\n"
+
+                return mess_res
+
             try:
-                main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1], price_now=PRICE_NOW[-1],
-                          price_old=PRICE_OLD[-1])
+                result_message = main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1], price_now=PRICE_NOW[-1],
+                                           price_old=PRICE_OLD[-1], messing=1)
+
+                print(result_message)
+                for i in result_message:
+                    for j in i:
+                        bot.send_message(call.message.chat.id, data_reparing(j))
+
+                bot.send_message(call.message.chat.id, 'Парсинг закончился')
 
             except Exception as e:
                 bot.send_message(call.message.chat.id, f'Произошла ошибка повторите еще раз пожалуйста {e}')
 
-        elif call.data == 'xlsx':
-            file_path = 'text.xlsx'
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                with open(file_path, 'w+') as file:
-                    pass
+        elif call.data == 'xlsx' or call.data == 'csv':
+            def xlsx_and_csv(file_path):
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    with open(file_path, 'w+') as file:
+                        pass
 
-                with open(file_path, 'rb') as file:
-                    try:
-                        main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1], price_now=PRICE_NOW[-1],
-                                  price_old=PRICE_OLD[-1])
+                    with open(file_path, 'rb') as file:
+                        try:
+                            main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1], price_now=PRICE_NOW[-1],
+                                      price_old=PRICE_OLD[-1])
 
-                        bot.send_document(call.message.chat.id, file)
-                        bot.send_message(call.message.chat.id, 'Парсинг объявлений закончен')
+                            bot.send_document(call.message.chat.id, file)
+                            bot.send_message(call.message.chat.id, 'Парсинг объявлений закончен')
 
-                    except Exception as e:
-                        bot.send_message(call.message.chat.id, f'Произошла ошибка повторите еще раз пожалуйста {e}')
+                            TOWN[:] = []
+
+                            CATEGORY[:] = []
+
+                            ITEM[:] = []
+
+                            PRICE_OLD[:] = []
+
+                            PRICE_NOW[:] = []
+
+                        except Exception as e:
+                            bot.send_message(call.message.chat.id, f'Произошла ошибка повторите еще раз пожалуйста {e}')
+
+            if call.data == 'csv':
+                xlsx_and_csv('text.xlsx')
+
+            elif call.data == 'xlsx':
+                xlsx_and_csv('text.csv')
 
 
         elif call.data == 'parsing':
