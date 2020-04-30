@@ -206,8 +206,9 @@ class Avito_href(Avito_parser_main):
     Класс отвечающий за парсинг с ссылки без параметров
     '''
 
-    def __init__(self, href):
+    def __init__(self, href , item):
         super(Avito_parser_main, self).__init__()
+        self.item = item
         self.href = href
         self.params = {}
         self.text_href = requests.get(self.href).text
@@ -217,12 +218,3 @@ class Avito_href(Avito_parser_main):
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36'
         }
 
-    def parametr(self, page):
-        if page >= 1:
-            self.params['p'] = page
-            result = self.session.get(url=self.href, params=self.params)
-
-        else:
-            result = self.session.get(url=self.href)
-
-        return result
