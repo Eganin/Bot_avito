@@ -88,6 +88,20 @@ def main_href(href, item, messing=None):
             cls.csv_writer(res)
 
 
+def return_callback():
+    ITEM[:] = []
+
+    PRICE_OLD[:] = []
+
+    PRICE_NOW[:] = []
+
+    CATEGORY[:] = []
+
+    HREF[:] = []
+
+    TOWN[:] = []
+
+
 @bot.message_handler(commands=['start'])
 def starting(message):
     '''
@@ -128,7 +142,6 @@ def get_url(messsage):  # для нахождения url
 @bot.message_handler(content_types=['text'])
 def main_avito(message):
     global CNT
-
     if message.chat.type == 'private':
         '''
         Обработка основных комманд
@@ -146,17 +159,6 @@ def main_avito(message):
             bot.send_message(message.chat.id, HELP, parse_mode='html')
 
         elif message.text.lower().strip() == 'сбросить все':
-            ITEM[:] = []
-
-            PRICE_OLD[:] = []
-
-            PRICE_NOW[:] = []
-
-            CATEGORY[:] = []
-
-            HREF[:] = []
-
-            TOWN[:] = []
             bot.send_message(message.chat.id, 'Настройки сброшены')
 
         else:
@@ -190,7 +192,7 @@ def main_avito(message):
                 CNT += 1
 
                 bot.send_message(message.chat.id,
-                                 'Введите максимальную цены продукта , если не надо ставьте прочерк')
+                                 'Введите максимальную цену продукта , если не надо ставьте прочерк')
 
             elif CNT == 3:
                 price_old = message.text.lower().strip()
@@ -206,7 +208,7 @@ def main_avito(message):
                 mark_1 = types.InlineKeyboardButton('Отправить сообщением', callback_data='mess')
                 mark_2 = types.InlineKeyboardButton('Отправить файлом xlsx', callback_data='xlsx')
                 mark_3 = types.InlineKeyboardButton('Отправить файлом csv', callback_data='csv')
-                markup_variance.add(mark_1, mark_2 , mark_3)
+                markup_variance.add(mark_1, mark_2, mark_3)
                 bot.send_message(message.chat.id, 'Выберете удобный вам способ отправки',
                                  reply_markup=markup_variance)
 
@@ -234,28 +236,37 @@ def main_callback(call):
         elif call.data == 'href':
             bot.send_message(call.message.chat.id, 'Введите url для парсинга объявлений')
 
-        elif call.data == 'mess':
-            def data_reparing(dictionary):
-                mess_res = f"Название : {dictionary['title']}\n" \
-                           f"Ссылка : {dictionary['href']}\n" \
-                           f"Цена : {dictionary['price']}\n" \
-                           f"Аддресс : {dictionary['address']}\n"
+        elif call.data == 'mess' or call.data == 'mess_enclosing':
+            def worker_message(enclosing):
+                def data_reparing(dictionary):
+                    mess_res = f"Название : {dictionary['title']}\n" \
+                               f"Ссылка : {dictionary['href']}\n" \
+                               f"Цена : {dictionary['price']}\n" \
+                               f"Адресс : {dictionary['address']}\n"
 
-                return mess_res
+                    return mess_res
 
-            try:
-                result_message = main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1], price_now=PRICE_NOW[-1],
-                                           price_old=PRICE_OLD[-1], messing=1)
+                try:
+                    if enclosing == 'mess':
+                        main = main_main
+                        result_message = main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1],
+                                              price_now=PRICE_NOW[-1],
+                                              price_old=PRICE_OLD[-1], messing=1)
 
-                print(result_message)
-                for i in result_message:
-                    for j in i:
-                        bot.send_message(call.message.chat.id, data_reparing(j))
+                    elif enclosing == 'mess_enclosing':
+                        main = main_href
+                        result_message = main(href=HREF[-1], item=ITEM[-1], messing=1)
 
-                bot.send_message(call.message.chat.id, 'Парсинг закончился')
+                    for i in result_message:
+                        for j in i:
+                            bot.send_message(call.message.chat.id, data_reparing(j))
 
-            except Exception as e:
-                bot.send_message(call.message.chat.id, f'Произошла ошибка повторите еще раз пожалуйста {e}')
+                    bot.send_message(call.message.chat.id, 'Парсинг закончился')
+
+                except Exception as e:
+                    bot.send_message(call.message.chat.id, f'Произошла ошибка повторите еще раз пожалуйста {e}')
+
+            worker_message(call.data)
 
         elif call.data == 'xlsx' or call.data == 'csv' or call.data == 'xlsx_enclosing' or call.data == 'csv_enclosing':
             def xlsx_and_csv(file_path, var_enc):
@@ -264,45 +275,38 @@ def main_callback(call):
                     with open(file_path, 'w+') as file:
                         pass
 
-                    with open(file_path, 'rb') as file:
                         def work_cmd(main):
-                            try:
-                                if main == main_main:
-                                    main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1],
-                                              price_now=PRICE_NOW[-1],
-                                              price_old=PRICE_OLD[-1])
+                            with open(file_path, 'rb') as file:
 
-                                elif main == main_href:
-                                    main_href(href=HREF[-1], item=ITEM[-1])
+                                try:
+                                    if main == main_main:
+                                        main_main(town=TOWN[-1], category=CATEGORY[-1], item=ITEM[-1],
+                                                  price_now=PRICE_NOW[-1],
+                                                  price_old=PRICE_OLD[-1])
 
-                                bot.send_document(call.message.chat.id, file)
-                                bot.send_message(call.message.chat.id, 'Парсинг объявлений закончен')
+                                    elif main == main_href:
+                                        main_href(href=HREF[-1], item=ITEM[-1])
 
-                                TOWN[:] = []
+                                    bot.send_message(call.message.chat.id, 'Парсинг объявлений закончен')
+                                    bot.send_document(call.message.chat.id, file)
 
-                                CATEGORY[:] = []
+                                    return_callback()
 
-                                ITEM[:] = []
+                                except Exception as e:
+                                    bot.send_message(call.message.chat.id,
+                                                     f'Произошла ошибка повторите еще раз пожалуйста {e}')
 
-                                PRICE_OLD[:] = []
-
-                                PRICE_NOW[:] = []
-
-                            except Exception as e:
-                                bot.send_message(call.message.chat.id,
-                                                 f'Произошла ошибка повторите еще раз пожалуйста {e}')
-
-                        if var_enc == 'not_encloding':
+                        if var_enc == 'not_enclosing':
                             work_cmd(main_main)
 
                         elif var_enc == 'enclosing':
                             work_cmd(main_href)
 
             if call.data == 'csv':
-                xlsx_and_csv('text.xlsx', 'not_enclosing')
+                xlsx_and_csv('text.csv', 'not_enclosing')
 
             elif call.data == 'xlsx':
-                xlsx_and_csv('text.csv', 'not_enclosing')
+                xlsx_and_csv('text.xlsx', 'not_enclosing')
 
             elif call.data == 'xlsx_enclosing':
                 xlsx_and_csv('text.xlsx', 'enclosing')
@@ -318,44 +322,21 @@ def main_callback(call):
             m_enclosing_3 = types.InlineKeyboardButton('Файлом xlsx', callback_data='xlsx_enclosing')
             mark_enclosing_variance.add(m_enclosing_1, m_enclosing_2, m_enclosing_3)
             bot.send_message(call.message.chat.id, 'Выберите вариант отправки', reply_markup=mark_enclosing_variance)
-            file_path = 'text.csv'
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                with open(file_path, 'w+') as file:
-                    pass
 
-            with open(file_path, 'rb') as file:
-                try:
-                    main_href(HREF[-1])
-
-                except:
-                    bot.send_message(call.message.chat.id, 'Вы ввели некоректные данные повторите еще раз пожалуйста')
-
-                bot.send_document(call.message.chat.id, file)
-                bot.send_message(call.message.chat.id, 'Парсинг объявлений закончен')
-
-            PRICE_NOW[:] = []
-
-            PRICE_OLD[:] = []
-
-            HREF[:] = []
-
-            TOWN[:] = []
-
-            ITEM[:] = []
-
-            CATEGORY[:] = []
+        elif call.data == 'noup':
+            return_callback()
+            bot.send_message(call.message.chat.id, 'Парсинг отменен')
 
         elif call.data == 'OK':
-            bot.send_message(call.message.chat.id, 'Введите название продукта , если не надо ставьте - ')
+            bot.send_message(call.message.chat.id, 'Введите название продукта')
 
             text_item = call.message.text.lower().strip()
-            if text_item == '-':
-                mark_start_href = types.InlineKeyboardMarkup()
-                href_button = types.InlineKeyboardButton('Начать', callback_data='parsing')
-                href_button_2 = types.InlineKeyboardButton('Отмена', callback_data='noup')
-                mark_start_href.add(href_button, href_button_2)
-                bot.send_message(call.message.chat.id, 'Выберите', reply_markup=mark_start_href)
+            ITEM.append(text_item)
+            mark_start_href = types.InlineKeyboardMarkup()
+            href_button = types.InlineKeyboardButton('Начать', callback_data='parsing')
+            href_button_2 = types.InlineKeyboardButton('Отмена', callback_data='noup')
+            mark_start_href.add(href_button, href_button_2)
+            bot.send_message(call.message.chat.id, 'Выберите', reply_markup=mark_start_href)
 
         elif call.data == 'T':
             T_markup = types.InlineKeyboardMarkup()
