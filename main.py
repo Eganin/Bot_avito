@@ -64,28 +64,26 @@ def main_main(town, category, item=None, price_now=None, price_old=None, messing
         return message
 
 
-def main_href(href, item, messing=None):
+def main_href(href, messing=None):
     '''
     Аналогичная функция запуска парсера без параметров
     :param href:
     :return:
     '''
     message = []
-    cls = Avito_href(href, item)
+    cls = Avito_href(href)
     r = cls.text_href
     rang = cls.get_pagination(r)
     for i in range(1, int(rang) + 1):
-        if item == 1:
-            text = cls.parametring(page=i)
-
-        else:
-            text = cls.parametring(page=i, item=item)
+        text = cls.parametr(page=i)
         res = cls.parsing_block(text)
         if messing == 1:
             message.append(res)
 
         else:
             cls.csv_writer(res)
+
+    return message
 
 
 def return_callback():
@@ -160,6 +158,7 @@ def main_avito(message):
 
         elif message.text.lower().strip() == 'сбросить все':
             bot.send_message(message.chat.id, 'Настройки сброшены')
+
 
         else:
             # Получение параметров для парсинга , с заданием воиросов для ползователя
@@ -255,7 +254,7 @@ def main_callback(call):
 
                     elif enclosing == 'mess_enclosing':
                         main = main_href
-                        result_message = main(href=HREF[-1], item=ITEM[-1], messing=1)
+                        result_message = main(href=HREF[-1], messing=1)
 
                     for i in result_message:
                         for j in i:
@@ -285,9 +284,8 @@ def main_callback(call):
                                                   price_old=PRICE_OLD[-1])
 
                                     elif main == main_href:
-                                        main_href(href=HREF[-1], item=ITEM[-1])
+                                        main_href(href=HREF[-1])
 
-                                    bot.send_message(call.message.chat.id, 'Парсинг объявлений закончен')
                                     bot.send_document(call.message.chat.id, file)
 
                                     return_callback()
@@ -328,10 +326,6 @@ def main_callback(call):
             bot.send_message(call.message.chat.id, 'Парсинг отменен')
 
         elif call.data == 'OK':
-            bot.send_message(call.message.chat.id, 'Введите название продукта')
-
-            text_item = call.message.text.lower().strip()
-            ITEM.append(text_item)
             mark_start_href = types.InlineKeyboardMarkup()
             href_button = types.InlineKeyboardButton('Начать', callback_data='parsing')
             href_button_2 = types.InlineKeyboardButton('Отмена', callback_data='noup')
