@@ -168,10 +168,10 @@ class Avito_parser_main(object):
         with open('text.xlsx', 'a') as f:
             writer = csv.writer(f)
             for i in data:
-                writer.writerow((i['title'],
-                                 i['href'],
-                                 i['price'],
-                                 i['address']))
+                writer.writerow((i[0],
+                                 i[1],
+                                 i[2],
+                                 i[3]))
 
     def Towner_and_Item(self, Town):
         '''
@@ -226,4 +226,3 @@ class Avito_href(Avito_parser_main):
             result = self.session.get(url=self.href)
 
         return result
-

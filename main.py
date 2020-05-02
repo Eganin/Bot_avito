@@ -67,7 +67,7 @@ def main_main(town, category, item=None, price_now=None, price_old=None, messing
 def main_href(href, messing=None):
     '''
     Аналогичная функция запуска парсера без параметров
-    :param href:
+    :param href:    :param href:
     :return:
     '''
     message = []
