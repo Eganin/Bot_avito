@@ -23,7 +23,8 @@ CATEGORY = []
 bot = telebot.TeleBot(TG_TOKEN)
 
 
-def main_main(town, category, item=None, price_now=None, price_old=None, messing=None):
+def main_main(town: str, category: str, item: str = None, price_now: str = None, price_old: str = None,
+              messing: str = None) -> list:
     '''
     Запуск парсера с параметрами , значения которые не ввел пользователь будут 1
     :param town:
@@ -33,15 +34,6 @@ def main_main(town, category, item=None, price_now=None, price_old=None, messing
     :param price_old:
     :return:
     '''
-    if item == 1:
-        item = None
-
-    if price_now == 1:
-        price_now = None
-
-    if price_old == 1:
-        price_old = None
-
     message = []
     cls = Avito_parser_main(category, town, price_now, price_old, item)
     r = cls.url_r
@@ -64,10 +56,10 @@ def main_main(town, category, item=None, price_now=None, price_old=None, messing
         return message
 
 
-def main_href(href, messing=None):
+def main_href(href: str, messing: str = None) -> list:
     '''
     Аналогичная функция запуска парсера без параметров
-    :param href:    :param href:
+    :param href:
     :return:
     '''
     message = []
@@ -172,7 +164,7 @@ def main_avito(message):
             elif CNT == 1:
                 item = message.text.lower().strip()
                 if item == '-':
-                    item = 1
+                    item = None
 
                 ITEM.append(item)
 
@@ -184,7 +176,7 @@ def main_avito(message):
             elif CNT == 2:
                 price_now = message.text.lower().strip()
                 if price_now == '-':
-                    price_now = 1
+                    price_now = None
 
                 PRICE_NOW.append(price_now)
                 CNT += 1
@@ -195,7 +187,7 @@ def main_avito(message):
             elif CNT == 3:
                 price_old = message.text.lower().strip()
                 if price_old == '-':
-                    price_old = 1
+                    price_old = None
 
                 PRICE_OLD.append(price_old)
                 CNT = 0

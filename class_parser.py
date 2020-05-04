@@ -9,7 +9,7 @@ class Avito_parser_main(object):
     класс отвечающий за парсинг авито с параметрами
     '''
 
-    def __init__(self, categories, town, price_now=None, price_old=None, item=None):
+    def __init__(self, categories: str, town: str, price_now: str = None, price_old: str = None, item: str = None):
         self.BASE_URL = BASE_URL
         self.url = requests.get(self.get_url(categories, town)).url
         self.item = item
@@ -27,7 +27,7 @@ class Avito_parser_main(object):
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36'
         }
 
-    def get_url(self, category, town):
+    def get_url(self, category: str, town: str) -> str:
         '''
         Получаем url с городом и категорией
         :param category:
@@ -38,7 +38,7 @@ class Avito_parser_main(object):
         print(url_address)
         return url_address
 
-    def get_pagination(self, text):
+    def get_pagination(self, text: str):
         '''
         получение количества страниц
         :param text:
@@ -56,7 +56,7 @@ class Avito_parser_main(object):
             print(repr(e))
             pass
 
-    def parametring(self, page, item=None):
+    def parametring(self, page: int, item: str = None) -> requests.models.Response:
         '''
         Задание параметров в ссылке
         :param page:
@@ -77,7 +77,7 @@ class Avito_parser_main(object):
 
         return result
 
-    def parsing_block(self, result):
+    def parsing_block(self, result : requests.models.Response ) -> list:
         '''
         Парсинг страницы : парсинг названия , адреса , цены , ссылки
         :param result:
@@ -108,7 +108,7 @@ class Avito_parser_main(object):
                 if self.price_now and self.price_old:
                     pri_ce = self.number(price[:-5])
                     if int(self.price_now) <= int(pri_ce) <= int(self.price_old):
-                        price = el.select_one('span.snippet-price').text.strip().replace('₽', 'руб')
+                        price = price
 
                     else:
                         price = ''
@@ -116,7 +116,7 @@ class Avito_parser_main(object):
                 elif self.price_now:
                     pri_ce = self.number(price[:-5])
                     if int(self.price_now) <= int(pri_ce):
-                        price = el.select_one('span.snippet-price').text.strip().replace('₽', 'руб')
+                        price = price
 
                     else:
                         price = ''
@@ -130,10 +130,15 @@ class Avito_parser_main(object):
                         price = ''
 
                 else:
-                    price = el.select_one('span.snippet-price').text.strip().replace('₽', 'руб')
+                    price = ''
 
             except:
-                price = 'Цена не указана'
+                name_class = self.__class__
+                name_cls = str(name_class)[17:-2]
+                name_cls_child = str(name_class)[21:-2]
+                print(name_cls_child)
+                if name_cls == 'Avito_parser_main' or name_cls_child == 'Avito_href':
+                    price = price
 
             try:
                 address = el.select_one('span.item-address-georeferences-item__content').text.strip()
@@ -159,7 +164,7 @@ class Avito_parser_main(object):
         print(data_all)
         return data_all
 
-    def csv_writer(self, data):
+    def csv_writer(self, data: list):
         '''
         Запись словаря data из parsing_block в csv
         :param data:
@@ -173,7 +178,7 @@ class Avito_parser_main(object):
                                  i[2],
                                  i[3]))
 
-    def Towner_and_Item(self, Town):
+    def Towner_and_Item(self, Town: str) -> str:
         '''
         Перевод русской речи на английскую , для того чтобы можно было задать параметры для ссылки
         :param Town:
@@ -186,7 +191,7 @@ class Avito_parser_main(object):
 
         return res
 
-    def number(self, numb):
+    def number(self, numb: str) -> str:
         '''
         Переформирование строковых значений
         :param numb:
@@ -206,7 +211,7 @@ class Avito_href(Avito_parser_main):
     Класс отвечающий за парсинг с ссылки без параметров
     '''
 
-    def __init__(self, href):
+    def __init__(self, href: str):
         super(Avito_parser_main, self).__init__()
         self.href = href
         self.params = {}
@@ -217,7 +222,7 @@ class Avito_href(Avito_parser_main):
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36'
         }
 
-    def parametr(self, page):
+    def parametr(self, page: int):
         if page >= 1:
             self.params['p'] = page
             result = self.session.get(url=self.href, params=self.params)
