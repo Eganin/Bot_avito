@@ -157,8 +157,7 @@ def main_avito(message):
             bot.send_message(message.chat.id, HELP, parse_mode='html')
 
         elif message.text.lower().strip() == 'сбросить все':
-            bot.send_message(message.chat.id, 'Настройки сброшены')
-
+            bot.send_message(message.from_user.id, 'Настройки сброшены')
 
         else:
             # Получение параметров для парсинга , с заданием воиросов для ползователя
