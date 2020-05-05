@@ -14,12 +14,13 @@ class Avito_parser_main(object):
         self.url = requests.get(self.get_url(categories, town)).url
         self.item = item
         if self.item:
-            self.url_r = requests.get(self.get_url(categories, town), params={'q': self.item}).text
+            self.url_get_pagination = requests.get(self.get_url(categories, town), params={'q': self.item}).text
 
         else:
-            self.url_r = requests.get(self.get_url(categories, town)).text
+            self.url_get_pagination = requests.get(self.get_url(categories, town)).text
         self.price_now = price_now
         self.price_old = price_old
+
         self.params = {}
         self.session = requests.Session()
         self.headers = {
@@ -77,7 +78,7 @@ class Avito_parser_main(object):
 
         return result
 
-    def parsing_block(self, result : requests.models.Response ) -> list:
+    def parsing_block(self, result: requests.models.Response) -> list:
         '''
         Парсинг страницы : парсинг названия , адреса , цены , ссылки
         :param result:
@@ -130,15 +131,18 @@ class Avito_parser_main(object):
                         price = ''
 
                 else:
-                    price = ''
+                    price = price
 
             except:
                 name_class = self.__class__
                 name_cls = str(name_class)[17:-2]
                 name_cls_child = str(name_class)[21:-2]
-                print(name_cls_child)
                 if name_cls == 'Avito_parser_main' or name_cls_child == 'Avito_href':
-                    price = price
+                    try:
+                        price = price
+
+                    except:
+                        price = 'Цена не указана'
 
             try:
                 address = el.select_one('span.item-address-georeferences-item__content').text.strip()
@@ -187,7 +191,11 @@ class Avito_parser_main(object):
         result = Town.lower()
         res = ''
         for i in result:
-            res += dict_ru_en[i]
+            try:
+                res += dict_ru_en[i]
+
+            except:
+                return result
 
         return res
 

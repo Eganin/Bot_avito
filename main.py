@@ -26,7 +26,7 @@ bot = telebot.TeleBot(TG_TOKEN)
 def main_main(town: str, category: str, item: str = None, price_now: str = None, price_old: str = None,
               messing: str = None) -> list:
     '''
-    Запуск парсера с параметрами , значения которые не ввел пользователь будут 1
+    Запуск парсера с параметрами
     :param town:
     :param category:
     :param item:
@@ -36,7 +36,7 @@ def main_main(town: str, category: str, item: str = None, price_now: str = None,
     '''
     message = []
     cls = Avito_parser_main(category, town, price_now, price_old, item)
-    r = cls.url_r
+    r = cls.url_get_pagination
     rang = cls.get_pagination(r)
     for i in range(1, int(rang) + 1):
         if item:
@@ -79,6 +79,9 @@ def main_href(href: str, messing: str = None) -> list:
 
 
 def return_callback():
+    global CNT
+    CNT = 0
+
     ITEM[:] = []
 
     PRICE_OLD[:] = []
@@ -137,6 +140,7 @@ def main_avito(message):
         Обработка основных комманд
         '''
         if message.text.lower().strip() == 'начать работу':
+            return_callback()
             markup_main_inline = types.InlineKeyboardMarkup()
             button_1 = types.InlineKeyboardButton('Задать параметры для поиска объявлений', callback_data='main')
             button_2 = types.InlineKeyboardButton('Ввести ссылку', callback_data='href')
@@ -160,7 +164,6 @@ def main_avito(message):
 
                 bot.send_message(message.chat.id,
                                  'Введите название продукта которое вам нужно найти , если не надо ставьте прочерк')
-
             elif CNT == 1:
                 item = message.text.lower().strip()
                 if item == '-':
